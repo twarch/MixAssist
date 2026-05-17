@@ -37,6 +37,7 @@ local function get_targets()
     SD   = qb_get("target_SD",   -5),
     TOM  = qb_get("target_TOM",  -5),
     CLP  = qb_get("target_CLP",  -5),
+    CYM  = qb_get("target_CYM",  -25),
     HH   = qb_get("target_HH",   -20),
     OH   = qb_get("target_OH",   -20),
     ROOM = qb_get("target_ROOM", -30),
@@ -161,6 +162,7 @@ local function quick_balance_folder(folder_name, folder_cat, H, TARGETS, SDB_OFF
       elseif dtype == "HAT"     then target = TARGETS.HH
       elseif dtype == "TOM"     then target = TARGETS.TOM
       elseif dtype == "CLAP"    then target = TARGETS.CLP
+      elseif dtype == "CYM"     then target = TARGETS.CYM
       elseif dtype == "SD_TOP" or dtype == "SD_BOT" or dtype == "SD_TRIGGER" then
         target = TARGETS.SD
       else target = TARGETS.BD end
@@ -399,6 +401,7 @@ function T.render(ctx, state)
   qb_slider("Snare",              "target_SD",   -5,    -30, 0)
   qb_slider("Toms",               "target_TOM",  -5,    -30, 0)
   qb_slider("Clap / Rimshot",     "target_CLP",  -5,    -30, 0)
+  qb_slider("Crash / Ride / Cym","target_CYM",  -25,   -40, 0)
   qb_slider("Hi-hats",            "target_HH",   -20,   -40, 0)
   qb_slider("Overheads",          "target_OH",   -20,   -40, 0)
   qb_slider("Room",               "target_ROOM", -30,   -50, 0)
@@ -428,7 +431,7 @@ function T.render(ctx, state)
   reaper.ImGui_Spacing(ctx)
   if reaper.ImGui_Button(ctx, "Reset to defaults", btn_w, 0) then
     local defaults = {
-      target_BD=-5, target_SD=-5, target_TOM=-5, target_CLP=-5,
+      target_BD=-5, target_SD=-5, target_TOM=-5, target_CLP=-5, target_CYM=-25,
       target_HH=-20, target_OH=-20, target_ROOM=-30, sdb_offset=-15,
       target_BA=-12.5, target_EG=-20, target_AG=-17, target_KB=-20,
       target_SY=-20, target_BR=-20, target_WW=-20, target_PE=-25,

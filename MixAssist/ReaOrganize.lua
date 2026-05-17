@@ -235,10 +235,21 @@ local KEYWORDS = {
   },
 }
 
--- Si UserConfig contient des KEYWORDS personnalisés, on les utilise
+-- Si UserConfig contient des KEYWORDS personnalisés, on les fusionne
 if cfg.KEYWORDS then
   for cat, kws in pairs(cfg.KEYWORDS) do
-    KEYWORDS[cat] = kws
+    if not KEYWORDS[cat] then
+      KEYWORDS[cat] = kws
+    else
+      -- Ajouter les keywords custom sans dupliquer
+      local existing = {}
+      for _, kw in ipairs(KEYWORDS[cat]) do existing[kw] = true end
+      for _, kw in ipairs(kws) do
+        if not existing[kw] then
+          table.insert(KEYWORDS[cat], kw)
+        end
+      end
+    end
   end
 end
 
@@ -463,7 +474,7 @@ for i = 0, total - 1 do
     if cat == "DR" then
       rank = drum_rank(name) + sort_offset(name)
     else
-      rank = (total - i) * 10 + sort_offset(name)
+      rank = i * 10 + sort_offset(name)
     end
     table.insert(tracks, { track = tr, name = name, cat = cat, rank = rank, orig_idx = i })
   end
