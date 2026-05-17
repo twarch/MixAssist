@@ -80,6 +80,8 @@ One-click rough balance based on audio analysis.
 
 Measures the average peak level of each track and adjusts fader volume to reach configurable target levels per category. Runs folder by folder with a real-time progress bar.
 
+> **Note:** Quick Balance is designed to make an unbalanced session immediately listenable — not to replace a proper mix balance. Incoming sessions are often all over the place level-wise, and this gets things to a reasonable starting point fast.
+
 ![Tab QB](screenshots/tab_qb.png)
 ![QB in progress](screenshots/tab_qb_in_progress.png)
 ![QB done](screenshots/tab_qb_done.png)
