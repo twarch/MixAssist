@@ -193,10 +193,37 @@ function T.render(ctx, state)
   local W = WIN_W - 24
 
   -- ── Sélecteur catégorie ───────────────────────────────────
-  local cat_count = 0
+  local win_w, _ = reaper.ImGui_GetContentRegionAvail(ctx)
+  local fx_spacing = 4
+
+  -- Pré-calculer les lignes
+  local fx_items = {}
   for _, def in ipairs(folders_list) do
     if def.cat ~= "UNK" then
-      if cat_count > 0 and cat_count % 6 ~= 0 then reaper.ImGui_SameLine(ctx) end
+      local txt_w = reaper.ImGui_CalcTextSize(ctx, def.name)
+      table.insert(fx_items, { def = def, w = math.max(52, txt_w + 12) })
+    end
+  end
+  local fx_lines = {}
+  local fx_line = {}
+  local fx_line_w = 0
+  for _, item in ipairs(fx_items) do
+    local needed = fx_line_w > 0 and (fx_line_w + fx_spacing + item.w) or item.w
+    if needed > win_w - 16 and #fx_line > 0 then
+      table.insert(fx_lines, fx_line)
+      fx_line = { item }
+      fx_line_w = item.w
+    else
+      table.insert(fx_line, item)
+      fx_line_w = needed
+    end
+  end
+  if #fx_line > 0 then table.insert(fx_lines, fx_line) end
+
+  for _, line in ipairs(fx_lines) do
+    for li, item in ipairs(line) do
+      local def = item.def
+      if li > 1 then reaper.ImGui_SameLine(ctx) end
       local c   = def.color
       local col = H.rgb_to_imgui(c[1], c[2], c[3])
       local col_sel = selected_cat == def.cat and col
@@ -204,11 +231,10 @@ function T.render(ctx, state)
       reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(),        col_sel)
       reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(),  H.lighten(col, 20))
       reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(),   col)
-      if reaper.ImGui_Button(ctx, def.name .. "##fxcat_" .. def.cat, 52, 20) then
+      if reaper.ImGui_Button(ctx, def.name .. "##fxcat_" .. def.cat, item.w, 20) then
         selected_cat = def.cat
       end
       reaper.ImGui_PopStyleColor(ctx, 3)
-      cat_count = cat_count + 1
     end
   end
 

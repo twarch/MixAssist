@@ -315,59 +315,92 @@ function T.render(ctx, state)
   reaper.ImGui_Text(ctx, label)
   reaper.ImGui_Spacing(ctx)
 
-  local n_cols = math.max(1, math.floor(btn_w / 56))
-  local col_w  = math.floor((btn_w - (n_cols - 1) * spacing) / n_cols)
-  local cnt    = 0
-
+  -- Pré-calculer les sauts de ligne selon les largeurs réelles
+  local spacing = 4
+  local folders_to_show = {}
   for _, def in ipairs(cfg.FOLDERS) do
-    if def.cat == "UNK" then goto continue end
+    if def.cat ~= "UNK" then
+      local txt_w = reaper.ImGui_CalcTextSize(ctx, def.name)
+      local w = math.min(btn_w - 8, txt_w + 16)
+      table.insert(folders_to_show, { def = def, w = w })
+    end
+  end
 
-    local existing = existing_map[def.name]
-    local c        = def.color
-    local col, col_h, col_a
-
-    if existing then
-      -- Dossier existant → couleur pleine
-      col   = H.rgb_to_imgui(c[1], c[2], c[3])
-      col_h = H.lighten(col, 35)
-      col_a = col
+  -- Construire les lignes
+  local lines = {}
+  local current_line = {}
+  local current_w = 0
+  for _, item in ipairs(folders_to_show) do
+    local needed = (current_w > 0 and (current_w + spacing + item.w) or item.w)
+    if needed > btn_w - 16 and #current_line > 0 then
+      table.insert(lines, current_line)
+      current_line = { item }
+      current_w = item.w
     else
-      -- Dossier manquant → gris très sombre
-      col   = H.rgb_to_imgui(35, 35, 35)
-      col_h = H.rgb_to_imgui(50, 50, 50)
-      col_a = H.rgb_to_imgui(35, 35, 35)
+      table.insert(current_line, item)
+      current_w = needed
     end
+  end
+  if #current_line > 0 then table.insert(lines, current_line) end
 
-    if cnt > 0 and cnt % n_cols ~= 0 then reaper.ImGui_SameLine(ctx) end
-
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(),       col)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), col_h)
-    reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(),  col_a)
-    if not existing then
-      local tc = H.rgb_to_imgui(c[1], c[2], c[3])
-      reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(), tc)
+  local cnt = 0
+  for _, line in ipairs(lines) do
+    -- Calculer la largeur totale de la ligne
+    local line_w = 0
+    for li, item in ipairs(line) do
+      line_w = line_w + item.w
+      if li > 1 then line_w = line_w + spacing end
     end
+    -- Centrer la ligne
+    local offset = math.max(0, math.floor((btn_w - line_w) / 2))
+    reaper.ImGui_SetCursorPosX(ctx, reaper.ImGui_GetCursorPosX(ctx) + offset)
 
-    local clicked = reaper.ImGui_Button(ctx, def.name .. "##f" .. cnt, col_w, 24)
+    for li, item in ipairs(line) do
+      local def      = item.def
+      local existing = existing_map[def.name]
+      local c        = def.color
+      local col, col_h, col_a
 
-    if not existing then reaper.ImGui_PopStyleColor(ctx, 1) end
-    reaper.ImGui_PopStyleColor(ctx, 3)
-
-    if clicked and sel_count > 0 then
       if existing then
-        local native = reaper.ColorToNative(c[1], c[2], c[3]) | 0x1000000
-        H.move_selected_to_folder(existing.track, native)
+        col   = H.rgb_to_imgui(c[1], c[2], c[3])
+        col_h = H.lighten(col, 35)
+        col_a = col
       else
-        local folder_tr, native = H.create_folder(cfg, def)
-        H.move_selected_to_folder(folder_tr, native)
+        col   = H.rgb_to_imgui(35, 35, 35)
+        col_h = H.rgb_to_imgui(50, 50, 50)
+        col_a = H.rgb_to_imgui(35, 35, 35)
       end
-      folders_cache_time_ref[1] = 0
-      H.cleanup_unk_folder(cfg)
-      set_log("Moved to " .. def.name)
-    end
 
-    cnt = cnt + 1
-    ::continue::
+      if li > 1 then reaper.ImGui_SameLine(ctx) end
+
+      reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Button(),       col)
+      reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonHovered(), col_h)
+      reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_ButtonActive(),  col_a)
+      if not existing then
+        reaper.ImGui_PushStyleColor(ctx, reaper.ImGui_Col_Text(),
+          H.rgb_to_imgui(c[1], c[2], c[3]))
+      end
+
+      local clicked = reaper.ImGui_Button(ctx, def.name .. "##f" .. cnt, item.w, 24)
+
+      if not existing then reaper.ImGui_PopStyleColor(ctx, 1) end
+      reaper.ImGui_PopStyleColor(ctx, 3)
+
+      if clicked and sel_count > 0 then
+        if existing then
+          local native = reaper.ColorToNative(c[1], c[2], c[3]) | 0x1000000
+          H.move_selected_to_folder(existing.track, native)
+        else
+          local folder_tr, native = H.create_folder(cfg, def)
+          H.move_selected_to_folder(folder_tr, native)
+        end
+        folders_cache_time_ref[1] = 0
+        H.cleanup_unk_folder(cfg)
+        set_log("Moved to " .. def.name)
+      end
+
+      cnt = cnt + 1
+    end
   end
 
   -- ── Stereo merge ─────────────────────────────────────────

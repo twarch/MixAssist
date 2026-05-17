@@ -192,7 +192,7 @@ local KEYWORDS = {
   },
 
   BV = {
-    "backing voc", "backing vocal", "backing voice",
+    "backing voc", "backing vocal", "backing voice", "backing vox",
     "background voc", "background vocal", "background voice",
     "bg voc", "bg vocal", " bgv", "bkg voc",
     "bvox", "b vox", "bg vox",
@@ -374,6 +374,17 @@ local PRIORITY = {
   "DR","PE","BA","AG","EG","KB","SY","ST","BR","WW",
   "LV","BV","DV","SP","FX","SFX"
 }
+
+-- Ajouter les catégories custom de UserConfig à PRIORITY
+for _, def in ipairs(cfg.FOLDERS) do
+  local already = false
+  for _, cat in ipairs(PRIORITY) do
+    if cat == def.cat then already = true; break end
+  end
+  if not already and def.cat ~= "UNK" then
+    table.insert(PRIORITY, def.cat)
+  end
+end
 
 local function classify(name)
   local n = normalize(name)
